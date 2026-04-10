@@ -1,19 +1,21 @@
-# Intelligent Job Discovery SaaS - Phase 1
+# Intelligent Job Discovery SaaS (Phase 2B)
 
-Phase 1 delivers a production-minded backend foundation for an agentic job discovery SaaS.
+Current status:
+- Backend foundation (Phase 1) completed.
+- Pipeline foundation schema/contracts (Phase 2A) completed.
+- Input + trigger layer (Phase 2B) completed.
 
-This phase includes:
-- FastAPI scaffold with versioned API routing
-- Health endpoints (`live` and `ready`)
-- Environment-based configuration with Pydantic Settings
-- PostgreSQL + SQLAlchemy setup
-- Redis client setup
-- Core SQLAlchemy models for future workflows
-- Alembic migrations
-- Structured logging
-- Basic tests
+Phase 2B includes:
+- Preference APIs (create/update + fetch)
+- Pipeline run APIs (create + fetch)
+- Redis queue enqueue on run creation
+- Separate scheduler worker scaffold (manual one-off or interval loop)
+- Tests for routes, contracts, scheduler behavior
 
-This phase intentionally does **not** include scraping, extraction pipelines, LangGraph orchestration, frontend, or auth flows.
+Out of scope for now:
+- LangGraph runtime graph execution
+- Playwright crawling/extraction
+- Filtering, dedupe, ranking execution engine
 
 ## Tech Stack
 - Python 3.11+
@@ -25,52 +27,13 @@ This phase intentionally does **not** include scraping, extraction pipelines, La
 - Redis
 - Pytest
 
-## Project Structure
-```text
-.
-|-- alembic/
-|   |-- versions/
-|   |   `-- 20260409_0001_initial_schema.py
-|   |-- env.py
-|   `-- script.py.mako
-|-- app/
-|   |-- api/
-|   |   `-- routes/
-|   |       `-- health.py
-|   |-- core/
-|   |   |-- config.py
-|   |   `-- logging.py
-|   |-- db/
-|   |   |-- models/
-|   |   |   |-- base_mixins.py
-|   |   |   |-- extraction_log.py
-|   |   |   |-- job_listing.py
-|   |   |   `-- search_job.py
-|   |   |-- base.py
-|   |   `-- session.py
-|   |-- schemas/
-|   |   `-- health.py
-|   |-- services/
-|   |   `-- health_service.py
-|   `-- main.py
-|-- tests/
-|   |-- test_config.py
-|   `-- test_health.py
-|-- .env.example
-|-- .gitignore
-|-- alembic.ini
-|-- pyproject.toml
-`-- README.md
-```
-
-## Core Entities (Phase 1)
+## Core Entities
 - `SearchJob`
-  - Tracks user search requests and lifecycle state.
-- `JobListing`
-  - Stores normalized listing metadata plus summary/raw text.
-  - Includes unique constraint on `(source, source_url)` for deduplication readiness.
+- `JobListing` (extended with `apply_url`, `fit_score`, `match_reasons`)
 - `ExtractionLog`
-  - Tracks extraction outcomes per URL.
+- `UserPreference`
+- `PipelineRun`
+- `CandidateURL`
 
 ## Local Setup
 1. Create and activate a virtual environment.
@@ -92,6 +55,12 @@ Copy-Item .env.example .env
 ```
 
 4. Ensure PostgreSQL and Redis are running locally, then update `.env` values if needed.
+Required Phase 2B env keys:
+```env
+PIPELINE_QUEUE_NAME=pipeline:run_queue
+SCHEDULER_ENABLED=false
+SCHEDULER_INTERVAL_MINUTES=720
+```
 
 5. Run migrations.
 ```powershell
@@ -116,6 +85,32 @@ Invoke-RestMethod http://127.0.0.1:8000/api/v1/health/live
 Invoke-RestMethod http://127.0.0.1:8000/api/v1/health/ready
 ```
 
+Create/update preferences:
+```powershell
+Invoke-RestMethod -Method POST `
+  -Uri "http://127.0.0.1:8000/api/v1/pipeline/preferences" `
+  -ContentType "application/json" `
+  -Body '{"profile_name":"default","roles":["LLM Engineer"],"keywords":["python","langgraph"],"work_modes":["remote"],"preferred_locations":["US"],"salary_min":50000,"fresher_friendly":true,"companies_to_avoid":[],"is_active":true}'
+```
+
+Create pipeline run:
+```powershell
+Invoke-RestMethod -Method POST `
+  -Uri "http://127.0.0.1:8000/api/v1/pipeline/runs" `
+  -ContentType "application/json" `
+  -Body '{"user_preference_id":"<preference-uuid>","trigger_type":"manual"}'
+```
+
+Get run:
+```powershell
+Invoke-RestMethod http://127.0.0.1:8000/api/v1/pipeline/runs/<run-uuid>
+```
+
+Run one scheduler cycle:
+```powershell
+python -m app.workers.scheduler --once
+```
+
 Swagger docs:
 - `http://127.0.0.1:8000/docs`
 
@@ -124,8 +119,5 @@ Swagger docs:
 pytest
 ```
 
-## Notes for Future Phases
-- Architecture already separates API routes, service layer, core config, and DB layer.
-- Schema and migrations are ready for future agentic orchestration and scraping modules.
-- Repo structure is Docker-friendly for a later phase without forcing Docker now.
-
+## Notes for Next Phase
+- Next is Phase 2C: LangGraph orchestration skeleton wired to queued pipeline runs.

@@ -3,6 +3,7 @@
 from app.schemas.health import HealthResponse, ServiceStatus
 from app.schemas.pipeline import (
     PipelineRunCreate,
+    PipelineRunEnqueueResponse,
     PipelineRunRead,
     PipelineStatus,
     TriggerType,
@@ -21,4 +22,5 @@ __all__ = [
     "UserPreferenceRead",
     "PipelineRunCreate",
     "PipelineRunRead",
+    "PipelineRunEnqueueResponse",
 ]
