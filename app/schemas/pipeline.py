@@ -77,3 +77,9 @@ class PipelineRunRead(BaseModel):
 
     model_config = {"from_attributes": True}
 
+
+class PipelineRunEnqueueResponse(BaseModel):
+    run: PipelineRunRead
+    queue_name: str
+    queue_depth: int
+

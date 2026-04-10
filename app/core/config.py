@@ -11,6 +11,9 @@ class Settings(BaseSettings):
 
     database_url: str = "postgresql+psycopg://postgres:postgres@localhost:5432/job_discovery"
     redis_url: str = "redis://localhost:6379/0"
+    pipeline_queue_name: str = "pipeline:run_queue"
+    scheduler_enabled: bool = False
+    scheduler_interval_minutes: int = 720
 
     model_config = SettingsConfigDict(
         env_file=".env",

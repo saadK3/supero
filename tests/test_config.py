@@ -7,4 +7,7 @@ def test_settings_defaults():
     assert settings.api_v1_prefix == "/api/v1"
     assert settings.database_url.startswith("postgresql+psycopg://")
     assert settings.redis_url.startswith("redis://")
+    assert settings.pipeline_queue_name == "pipeline:run_queue"
+    assert settings.scheduler_enabled is False
+    assert settings.scheduler_interval_minutes == 720
 

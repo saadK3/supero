@@ -1,8 +1,15 @@
 """Pydantic schemas for API contracts."""
 
 from app.schemas.health import HealthResponse, ServiceStatus
+from app.schemas.orchestration import (
+    OrchestrationConfigSchema,
+    OrchestrationErrorSchema,
+    OrchestrationRunResponse,
+    OrchestrationStartRequest,
+)
 from app.schemas.pipeline import (
     PipelineRunCreate,
+    PipelineRunEnqueueResponse,
     PipelineRunRead,
     PipelineStatus,
     TriggerType,
@@ -14,6 +21,10 @@ from app.schemas.pipeline import (
 __all__ = [
     "HealthResponse",
     "ServiceStatus",
+    "OrchestrationConfigSchema",
+    "OrchestrationStartRequest",
+    "OrchestrationErrorSchema",
+    "OrchestrationRunResponse",
     "WorkMode",
     "TriggerType",
     "PipelineStatus",
@@ -21,4 +32,5 @@ __all__ = [
     "UserPreferenceRead",
     "PipelineRunCreate",
     "PipelineRunRead",
+    "PipelineRunEnqueueResponse",
 ]

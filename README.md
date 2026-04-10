@@ -1,8 +1,8 @@
-# Intelligent Job Discovery SaaS - Phase 1
+# Intelligent Job Discovery SaaS
 
 Phase 1 delivers a production-minded backend foundation for an agentic job discovery SaaS.
 
-This phase includes:
+Implemented so far:
 - FastAPI scaffold with versioned API routing
 - Health endpoints (`live` and `ready`)
 - Environment-based configuration with Pydantic Settings
@@ -12,8 +12,20 @@ This phase includes:
 - Alembic migrations
 - Structured logging
 - Basic tests
+- LangGraph orchestration skeleton (Phase 2C):
+  - `load_preferences -> research_agent -> dedupe_urls -> extraction_agent -> filter_rules -> dedupe_jobs -> rank_jobs -> persist -> finalize`
+  - retry policy + timeout support
+  - structured error path (`error_handler`) + resumable state
+- mocked adapters for deterministic end-to-end tests
+- Phase 2B trigger layer:
+  - preference + pipeline-run API endpoints
+  - Redis queue enqueue on run creation
+  - scheduler worker scaffold (`app.workers.scheduler`)
 
-This phase intentionally does **not** include scraping, extraction pipelines, LangGraph orchestration, frontend, or auth flows.
+Still intentionally out of scope:
+- live Playwright crawling/extraction
+- production agent prompts/tools
+- frontend/auth
 
 ## Tech Stack
 - Python 3.11+
@@ -116,12 +128,37 @@ Invoke-RestMethod http://127.0.0.1:8000/api/v1/health/live
 Invoke-RestMethod http://127.0.0.1:8000/api/v1/health/ready
 ```
 
+Create preference:
+```powershell
+Invoke-RestMethod -Method POST -Uri "http://127.0.0.1:8000/api/v1/pipeline/preferences" -ContentType "application/json" -Body '{"profile_name":"default","roles":["LLM Engineer"],"keywords":["python","langgraph"],"work_modes":["remote"],"preferred_locations":["US"],"salary_min":60000,"fresher_friendly":true,"companies_to_avoid":[],"is_active":true}'
+```
+
+Create run + enqueue:
+```powershell
+Invoke-RestMethod -Method POST -Uri "http://127.0.0.1:8000/api/v1/pipeline/runs" -ContentType "application/json" -Body '{"user_preference_id":"<preference-uuid>","trigger_type":"manual"}'
+```
+
+Run orchestration mock flow:
+```powershell
+Invoke-RestMethod -Method POST -Uri "http://127.0.0.1:8000/api/v1/pipeline/orchestration/mock-run" -ContentType "application/json" -Body '{"pipeline_run_id":"demo-run","preferences":{"roles":["LLM Engineer"],"keywords":["python","langgraph"],"companies_to_avoid":[]},"config":{"max_retries":2,"node_timeout_seconds":2.0}}'
+```
+
+Run scheduler one cycle:
+```powershell
+python -m app.workers.scheduler --once
+```
+
 Swagger docs:
 - `http://127.0.0.1:8000/docs`
 
 ## Run Tests
 ```powershell
 pytest
+```
+
+## Run Orchestration Skeleton (Phase 2C)
+```powershell
+python -c "from app.orchestration.runner import run_orchestration_from_scratch; s=run_orchestration_from_scratch('demo-run'); print(s['status'], s['persisted_count'])"
 ```
 
 ## Notes for Future Phases
